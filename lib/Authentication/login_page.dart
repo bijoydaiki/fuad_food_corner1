@@ -99,6 +99,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
 
   void registerUser() {
     if (_formKey.currentState!.validate()) {
+      Navigator.push(context, MaterialPageRoute(builder: (context) => LoginPage(),));
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('🎉 Registration successful')),
       );

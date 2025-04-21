@@ -30,6 +30,7 @@ class _NavigationBar_PageState extends State<NavigationBar_Page> {
   Widget build(BuildContext context) {
     //GlobalKey<ScaffoldState> gb=GlobalKey<ScaffoldState>();
     return Scaffold(
+      appBar: AppBar(),
       // key: gb,
       drawer: Drawer(  child: ListView(
         children: [
@@ -120,10 +121,10 @@ class _NavigationBar_PageState extends State<NavigationBar_Page> {
 
         items:
         [
+          Icon(Icons.local_pizza),
+          Icon(Icons.food_bank),
           Icon(Icons.food_bank_outlined),
-          Icon(Icons.food_bank_outlined),
-          Icon(Icons.food_bank_outlined),
-          Icon(Icons.no_drinks_outlined),
+          Icon(Icons.no_drinks),
         ],
 
       ),
