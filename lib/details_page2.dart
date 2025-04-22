@@ -3,8 +3,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' show get;
 
-
-
 class PizzaPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -16,12 +14,11 @@ class PizzaPage extends StatelessWidget {
         scaffoldBackgroundColor: Colors.grey[100],
         fontFamily: 'Roboto',
       ),
-      home: HomeScreen(),
+      home: HomePage(),
     );
   }
 }
 
-// Model
 class Spacecraft {
   final String id;
   final String name, imageUrl, propellant;
@@ -43,10 +40,10 @@ class Spacecraft {
   }
 }
 
-// API Call
 Future<List<Spacecraft>> downloadJSON() async {
   final jsonEndpoint =
-      "https://raw.githubusercontent.com/johnriad/pizza/main/pizza.json";
+      "https://raw.githubusercontent.com/johnriad/recycle/refs/heads/main/recycle.JSON";
+
   final response = await get(Uri.parse(jsonEndpoint));
 
   if (response.statusCode == 200) {
@@ -55,24 +52,18 @@ Future<List<Spacecraft>> downloadJSON() async {
         .map((spacecraft) => Spacecraft.fromJson(spacecraft))
         .toList();
   } else {
-    throw Exception('Failed to load data');
+    throw Exception('Failed to load JSON data.');
   }
 }
 
-// Home Screen
-class HomeScreen extends StatelessWidget {
+class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('Fuad Food Corner'),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.shopping_cart),
-            onPressed: () {},
-          )
-        ],
+        actions: [IconButton(onPressed: () {}, icon: Icon(Icons.shopping_cart))],
       ),
       body: FutureBuilder<List<Spacecraft>>(
         future: downloadJSON(),
@@ -82,7 +73,7 @@ class HomeScreen extends StatelessWidget {
               padding: EdgeInsets.all(10),
               itemCount: snapshot.data!.length,
               itemBuilder: (context, index) {
-                return FoodCard(food: snapshot.data![index]);
+                return FoodCard(spacecraft: snapshot.data![index]);
               },
             );
           } else if (snapshot.hasError) {
@@ -95,55 +86,46 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-// Food Card Widget
 class FoodCard extends StatelessWidget {
-  final Spacecraft food;
+  final Spacecraft spacecraft;
 
-  FoodCard({required this.food});
+  FoodCard({required this.spacecraft});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        Navigator.push(context,
-          MaterialPageRoute(builder: (_) => DetailScreen(food: food)),
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => SecondScreen(spacecraft: spacecraft),
+          ),
         );
       },
       child: Card(
-        margin: EdgeInsets.symmetric(vertical: 8),
-        elevation: 5,
+        margin: EdgeInsets.symmetric(vertical: 10),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        elevation: 4,
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
-              borderRadius:
-              BorderRadius.vertical(top: Radius.circular(15)),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
               child: Image.network(
-                food.imageUrl,
+                spacecraft.imageUrl,
                 height: 180,
                 width: double.infinity,
                 fit: BoxFit.cover,
               ),
             ),
             Padding(
-              padding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    food.name,
-                    style: TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    "\$${food.propellant}",
-                    style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.green[800],
-                        fontWeight: FontWeight.w500),
-                  )
+                  Text(spacecraft.name,
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text("\$${spacecraft.propellant}",
+                      style: TextStyle(fontSize: 16, color: Colors.green[700])),
                 ],
               ),
             )
@@ -154,18 +136,31 @@ class FoodCard extends StatelessWidget {
   }
 }
 
-// Detail Screen
-class DetailScreen extends StatefulWidget {
-  final Spacecraft food;
+class SecondScreen extends StatefulWidget {
+  final Spacecraft spacecraft;
 
-  DetailScreen({required this.food});
+  SecondScreen({required this.spacecraft});
 
   @override
-  _DetailScreenState createState() => _DetailScreenState();
+  _SecondScreenState createState() => _SecondScreenState();
 }
 
-class _DetailScreenState extends State<DetailScreen> {
+class _SecondScreenState extends State<SecondScreen> {
   int itemCount = 0;
+
+  // Sanitize and parse the price string
+  double get itemPrice {
+    try {
+      return double.parse(widget.spacecraft.propellant.trim().replaceAll(RegExp(r'[^\d.]'), ''));
+    } catch (e) {
+      print('Failed to parse price: ${widget.spacecraft.propellant}');
+      return 0.0;
+    }
+  }
+
+  double get subtotal => itemPrice * itemCount;
+  double get vat => subtotal * 0.10;
+  double get totalPrice => subtotal + vat;
 
   void increment() {
     setState(() {
@@ -183,7 +178,7 @@ class _DetailScreenState extends State<DetailScreen> {
 
   void addToCart() {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Item added to cart")),
+      SnackBar(content: Text("Added to cart successfully!")),
     );
   }
 
@@ -191,34 +186,34 @@ class _DetailScreenState extends State<DetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.food.name),
+        title: Text(widget.spacecraft.name),
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(20),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(15),
               child: Image.network(
-                widget.food.imageUrl,
-                width: double.infinity,
+                widget.spacecraft.imageUrl,
                 height: 250,
+                width: double.infinity,
                 fit: BoxFit.cover,
               ),
             ),
             SizedBox(height: 20),
+            Text('FOOD DETAILS',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            SizedBox(height: 20),
             Text(
-              widget.food.name,
-              style: TextStyle(
-                  fontSize: 26, fontWeight: FontWeight.bold),
+              'NAME: ${widget.spacecraft.name}',
+              style: TextStyle(fontSize: 18),
             ),
             SizedBox(height: 10),
             Text(
-              "Price: \$${widget.food.propellant}",
-              style: TextStyle(
-                  fontSize: 20,
-                  color: Colors.green[800],
-                  fontWeight: FontWeight.w500),
+              'UNIT PRICE: \$${itemPrice.toStringAsFixed(2)}',
+              style: TextStyle(fontSize: 18, color: Colors.green[800]),
             ),
             SizedBox(height: 30),
             Row(
@@ -226,34 +221,52 @@ class _DetailScreenState extends State<DetailScreen> {
               children: [
                 IconButton(
                   onPressed: decrement,
-                  icon: Icon(Icons.remove),
-                  iconSize: 28,
+                  icon: Icon(Icons.remove_circle_outline),
+                  iconSize: 30,
                   color: Colors.deepOrange,
                 ),
                 Text(
                   '$itemCount',
-                  style: TextStyle(fontSize: 22),
+                  style: TextStyle(fontSize: 24),
                 ),
                 IconButton(
                   onPressed: increment,
-                  icon: Icon(Icons.add),
-                  iconSize: 28,
+                  icon: Icon(Icons.add_circle_outline),
+                  iconSize: 30,
                   color: Colors.deepOrange,
                 ),
               ],
             ),
             SizedBox(height: 30),
-            ElevatedButton.icon(
-              onPressed: addToCart,
-              icon: Icon(Icons.shopping_cart),
-              label: Text(
-                "Add to Cart",
-                style: TextStyle(fontSize: 18),
+            if (itemCount > 0)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Subtotal: \$${subtotal.toStringAsFixed(2)}',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  Text(
+                    'VAT (10%): \$${vat.toStringAsFixed(2)}',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  Text(
+                    'Total Price: \$${totalPrice.toStringAsFixed(2)}',
+                    style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.green[900],
+                        fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 20),
+                ],
               ),
+            ElevatedButton.icon(
+              onPressed: itemCount > 0 ? addToCart : null,
+              icon: Icon(Icons.shopping_cart),
+              label: Text('ADD TO CART', style: TextStyle(fontSize: 18)),
               style: ElevatedButton.styleFrom(
-                padding:
-                EdgeInsets.symmetric(horizontal: 30, vertical: 14),
                 backgroundColor: Colors.deepOrange,
+                padding: EdgeInsets.symmetric(horizontal: 30, vertical: 12),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30)),
               ),

@@ -3,6 +3,21 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' show get;
 
+class SoftDrinksPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Fuad Food Corner',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        primarySwatch: Colors.deepOrange,
+        scaffoldBackgroundColor: Colors.grey[100],
+        fontFamily: 'Roboto',
+      ),
+      home: HomePage(),
+    );
+  }
+}
 
 class Spacecraft {
   final String id;
@@ -41,46 +56,31 @@ Future<List<Spacecraft>> downloadJSON() async {
   }
 }
 
-class Four extends StatelessWidget {
+class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Riad Food Corner',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.deepOrange,
-        fontFamily: 'Roboto',
-        scaffoldBackgroundColor: Colors.grey.shade100,
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Fuad Food Corner'),
+        centerTitle: true,
+        actions: [IconButton(onPressed: () {}, icon: Icon(Icons.shopping_cart))],
       ),
-      home: Scaffold(
-        appBar: AppBar(
-          centerTitle: true,
-          title: const Text('Riad Food Corner'),
-          actions: [
-            IconButton(
-              onPressed: () {},
-              icon: Icon(Icons.shopping_cart_outlined),
-            )
-          ],
-        ),
-        body: FutureBuilder<List<Spacecraft>>(
-          future: downloadJSON(),
-          builder: (context, snapshot) {
-            if (snapshot.hasData) {
-              List<Spacecraft> spacecrafts = snapshot.data!;
-              return ListView.builder(
-                padding: EdgeInsets.all(10),
-                itemCount: spacecrafts.length,
-                itemBuilder: (context, index) {
-                  return FoodCard(spacecraft: spacecrafts[index]);
-                },
-              );
-            } else if (snapshot.hasError) {
-              return Center(child: Text('Error: ${snapshot.error}'));
-            }
-            return Center(child: CircularProgressIndicator());
-          },
-        ),
+      body: FutureBuilder<List<Spacecraft>>(
+        future: downloadJSON(),
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            return ListView.builder(
+              padding: EdgeInsets.all(10),
+              itemCount: snapshot.data!.length,
+              itemBuilder: (context, index) {
+                return FoodCard(spacecraft: snapshot.data![index]);
+              },
+            );
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+          return Center(child: CircularProgressIndicator());
+        },
       ),
     );
   }
@@ -97,53 +97,39 @@ class FoodCard extends StatelessWidget {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => SecondScreen(spacecraft: spacecraft)),
+          MaterialPageRoute(
+            builder: (_) => SecondScreen(spacecraft: spacecraft),
+          ),
         );
       },
       child: Card(
-        margin: EdgeInsets.symmetric(vertical: 10, horizontal: 5),
-        elevation: 6,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            color: Colors.white,
-          ),
-          child: Column(
-            children: [
-              ClipRRect(
-                borderRadius:
-                BorderRadius.vertical(top: Radius.circular(20)),
-                child: Image.network(
-                  spacecraft.imageUrl,
-                  height: 200,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                ),
+        margin: EdgeInsets.symmetric(vertical: 10),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        elevation: 4,
+        child: Column(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
+              child: Image.network(
+                spacecraft.imageUrl,
+                height: 180,
+                width: double.infinity,
+                fit: BoxFit.cover,
               ),
-              Padding(
-                padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      spacecraft.name,
-                      style: TextStyle(
-                          fontSize: 20, fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      "\$${spacecraft.propellant}",
-                      style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.green[700],
-                          fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(spacecraft.name,
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text("\$${spacecraft.propellant}",
+                      style: TextStyle(fontSize: 16, color: Colors.green[700])),
+                ],
               ),
-            ],
-          ),
+            )
+          ],
         ),
       ),
     );
@@ -160,17 +146,40 @@ class SecondScreen extends StatefulWidget {
 }
 
 class _SecondScreenState extends State<SecondScreen> {
-  int quantity = 0;
+  int itemCount = 0;
 
-  void increment() => setState(() => quantity++);
-  void decrement() => setState(() => quantity > 0 ? quantity-- : 0);
+  // Sanitize and parse the price string
+  double get itemPrice {
+    try {
+      return double.parse(widget.spacecraft.propellant.trim().replaceAll(RegExp(r'[^\d.]'), ''));
+    } catch (e) {
+      print('Failed to parse price: ${widget.spacecraft.propellant}');
+      return 0.0;
+    }
+  }
+
+  double get subtotal => itemPrice * itemCount;
+  double get vat => subtotal * 0.10;
+  double get totalPrice => subtotal + vat;
+
+  void increment() {
+    setState(() {
+      itemCount++;
+    });
+  }
+
+  void decrement() {
+    if (itemCount > 0) {
+      setState(() {
+        itemCount--;
+      });
+    }
+  }
 
   void addToCart() {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text("✔ Added to cart successfully!"),
-      backgroundColor: Colors.deepOrange,
-      behavior: SnackBarBehavior.floating,
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Added to cart successfully!")),
+    );
   }
 
   @override
@@ -182,9 +191,10 @@ class _SecondScreenState extends State<SecondScreen> {
       body: SingleChildScrollView(
         padding: EdgeInsets.all(20),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(15),
               child: Image.network(
                 widget.spacecraft.imageUrl,
                 height: 250,
@@ -192,73 +202,75 @@ class _SecondScreenState extends State<SecondScreen> {
                 fit: BoxFit.cover,
               ),
             ),
-            SizedBox(height: 25),
-            Text(
-              'SOFT DRINK DETAILS',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.deepOrange,
-              ),
-            ),
-            SizedBox(height: 25),
-            ListTile(
-              leading: Icon(Icons.local_drink, color: Colors.deepOrange),
-              title: Text("Name"),
-              subtitle: Text(widget.spacecraft.name),
-            ),
-            ListTile(
-              leading: Icon(Icons.monetization_on, color: Colors.green[700]),
-              title: Text("Price"),
-              subtitle: Text("\$${widget.spacecraft.propellant}"),
-            ),
+            SizedBox(height: 20),
+            Text('FOOD DETAILS',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
             SizedBox(height: 20),
             Text(
-              'Quantity',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              'NAME: ${widget.spacecraft.name}',
+              style: TextStyle(fontSize: 18),
             ),
             SizedBox(height: 10),
+            Text(
+              'UNIT PRICE: \$${itemPrice.toStringAsFixed(2)}',
+              style: TextStyle(fontSize: 18, color: Colors.green[800]),
+            ),
+            SizedBox(height: 30),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 IconButton(
                   onPressed: decrement,
                   icon: Icon(Icons.remove_circle_outline),
-                  iconSize: 32,
-                  color: Colors.redAccent,
+                  iconSize: 30,
+                  color: Colors.deepOrange,
                 ),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    color: Colors.grey.shade300,
-                  ),
-                  child: Text(
-                    '$quantity',
-                    style: TextStyle(fontSize: 22),
-                  ),
+                Text(
+                  '$itemCount',
+                  style: TextStyle(fontSize: 24),
                 ),
                 IconButton(
                   onPressed: increment,
                   icon: Icon(Icons.add_circle_outline),
-                  iconSize: 32,
-                  color: Colors.green,
+                  iconSize: 30,
+                  color: Colors.deepOrange,
                 ),
               ],
             ),
             SizedBox(height: 30),
+            if (itemCount > 0)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Subtotal: \$${subtotal.toStringAsFixed(2)}',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  Text(
+                    'VAT (10%): \$${vat.toStringAsFixed(2)}',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  Text(
+                    'Total Price: \$${totalPrice.toStringAsFixed(2)}',
+                    style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.green[900],
+                        fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 20),
+                ],
+              ),
             ElevatedButton.icon(
-              onPressed: addToCart,
-              icon: Icon(Icons.add_shopping_cart_rounded),
-              label: Text("ADD TO CART"),
+              onPressed: itemCount > 0 ? addToCart : null,
+              icon: Icon(Icons.shopping_cart),
+              label: Text('ADD TO CART', style: TextStyle(fontSize: 18)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.deepOrange,
-                padding: EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-                textStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                padding: EdgeInsets.symmetric(horizontal: 30, vertical: 12),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30)),
               ),
-            ),
+            )
           ],
         ),
       ),

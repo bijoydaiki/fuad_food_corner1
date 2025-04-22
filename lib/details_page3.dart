@@ -3,8 +3,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' show get;
 
-
-
 class HotDogPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -150,6 +148,20 @@ class SecondScreen extends StatefulWidget {
 class _SecondScreenState extends State<SecondScreen> {
   int itemCount = 0;
 
+  // Sanitize and parse the price string
+  double get itemPrice {
+    try {
+      return double.parse(widget.spacecraft.propellant.trim().replaceAll(RegExp(r'[^\d.]'), ''));
+    } catch (e) {
+      print('Failed to parse price: ${widget.spacecraft.propellant}');
+      return 0.0;
+    }
+  }
+
+  double get subtotal => itemPrice * itemCount;
+  double get vat => subtotal * 0.10;
+  double get totalPrice => subtotal + vat;
+
   void increment() {
     setState(() {
       itemCount++;
@@ -179,6 +191,7 @@ class _SecondScreenState extends State<SecondScreen> {
       body: SingleChildScrollView(
         padding: EdgeInsets.all(20),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(15),
@@ -199,7 +212,7 @@ class _SecondScreenState extends State<SecondScreen> {
             ),
             SizedBox(height: 10),
             Text(
-              'PRICE: \$${widget.spacecraft.propellant}',
+              'UNIT PRICE: \$${itemPrice.toStringAsFixed(2)}',
               style: TextStyle(fontSize: 18, color: Colors.green[800]),
             ),
             SizedBox(height: 30),
@@ -225,8 +238,30 @@ class _SecondScreenState extends State<SecondScreen> {
               ],
             ),
             SizedBox(height: 30),
+            if (itemCount > 0)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Subtotal: \$${subtotal.toStringAsFixed(2)}',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  Text(
+                    'VAT (10%): \$${vat.toStringAsFixed(2)}',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  Text(
+                    'Total Price: \$${totalPrice.toStringAsFixed(2)}',
+                    style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.green[900],
+                        fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 20),
+                ],
+              ),
             ElevatedButton.icon(
-              onPressed: addToCart,
+              onPressed: itemCount > 0 ? addToCart : null,
               icon: Icon(Icons.shopping_cart),
               label: Text('ADD TO CART', style: TextStyle(fontSize: 18)),
               style: ElevatedButton.styleFrom(

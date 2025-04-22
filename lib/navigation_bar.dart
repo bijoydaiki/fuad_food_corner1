@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:fuad_food_corner/details_page.dart';
 import 'package:fuad_food_corner/details_page2.dart';
 import 'package:fuad_food_corner/details_page3.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'about_page.dart';
@@ -24,13 +25,13 @@ class _NavigationBar_PageState extends State<NavigationBar_Page> {
     BurgerPage(),
     PizzaPage(),
     HotDogPage(),
-    Four(),
+    SoftDrinksPage(),
   ];
   @override
   Widget build(BuildContext context) {
     //GlobalKey<ScaffoldState> gb=GlobalKey<ScaffoldState>();
     return Scaffold(
-      appBar: AppBar(),
+
       // key: gb,
       drawer: Drawer(  child: ListView(
         children: [
@@ -67,7 +68,7 @@ class _NavigationBar_PageState extends State<NavigationBar_Page> {
             tileColor: Colors.orange,
             title: Text("Mail Me"),
             onTap: () {
-              launch('mailto:riadrayhan.cse@gmail.com');
+              launch('mailto:ullahfuadmahmud@gmail.com');
             },
           ),
           ListTile(
@@ -75,7 +76,7 @@ class _NavigationBar_PageState extends State<NavigationBar_Page> {
             tileColor: Colors.orange,
             title: Text("Call me"),
             onTap: () {
-              launch('tel://01610473706');
+              launch('tel://01759565114');
             },
           ),
           ListTile(
@@ -83,9 +84,13 @@ class _NavigationBar_PageState extends State<NavigationBar_Page> {
             tileColor: Colors.orange,
             title: Text("Share"),
             onTap: () {
-
+              Share.share(
+                'Check out this amazing food app! 🍔🔥\nDownload here: https://play.google.com/store/apps/details?id=com.fuad.fuadfoodcorner',
+                subject: 'Fuad Food Corner App',
+              );
             },
           ),
+
           ListTile(
             leading: Icon(Icons.star_rate_outlined),
             tileColor: Colors.orange,
@@ -121,8 +126,8 @@ class _NavigationBar_PageState extends State<NavigationBar_Page> {
 
         items:
         [
-          Icon(Icons.local_pizza),
           Icon(Icons.food_bank),
+          Icon(Icons.local_pizza),
           Icon(Icons.food_bank_outlined),
           Icon(Icons.no_drinks),
         ],

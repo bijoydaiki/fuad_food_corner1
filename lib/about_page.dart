@@ -17,10 +17,20 @@ class _AboutUsState extends State<AboutUs> {
         title: Text("About Us"),
       ),
       body: Center(
-        child: Text("The Fuad Food Corner app is basically made available to people. "
-            "Everyone can easily order food using the app. Our restaurant has 10 employees."
-            " There are 3 chefs who prepare delicious food. There is no problem with the control panel. "
-            "You can complain wherever you want.It is located in Khulna. Which gained a reputation for fun food"),
+        child: Text(
+            "The Fuad Food Corner app is designed to make delicious food easily accessible to everyone. "
+                "With a simple and user-friendly interface, customers can quickly browse the menu, place orders, "
+                "and enjoy their favorite meals from the comfort of their home. The restaurant currently employs 10 dedicated staff members, "
+                "including 3 skilled chefs who specialize in crafting mouth-watering dishes. "
+                "We take pride in our efficient service and smooth control panel — there are no issues with placing or managing orders. "
+                "In case of any concerns, you can easily reach out or file a complaint through the app. "
+
+                "Fuad Food Corner is proudly located in Khulna and has earned a strong reputation for offering fun and flavorful food. "
+                "Our menu includes 4 popular items that everyone loves: crispy Pizza, juicy Burgers, spicy Hotdogs, and refreshing Soft Drinks. "
+                "Whether you're craving a quick snack or a full meal, Fuad Food Corner has something for you. "
+                "We're committed to quality, hygiene, and making sure every bite brings a smile. 🍕🍔🌭🥤"
+        ),
+
       ),
     );
   }

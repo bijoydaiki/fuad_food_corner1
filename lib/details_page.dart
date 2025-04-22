@@ -1,17 +1,19 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' show get;
-import 'dart:convert';
+
 
 
 class BurgerPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      title: 'Fuad Food Corner',
       debugShowCheckedModeBanner: false,
-      title: 'Riad Food Corner',
       theme: ThemeData(
         primarySwatch: Colors.deepOrange,
+        scaffoldBackgroundColor: Colors.grey[100],
         fontFamily: 'Roboto',
       ),
       home: HomePage(),
@@ -40,54 +42,39 @@ class Spacecraft {
   }
 }
 
-class HomePage extends StatelessWidget {
-  Future<List<Spacecraft>> fetchData() async {
-    final url = "https://raw.githubusercontent.com/johnriad/recycle/main/recycle.JSON";
-    final response = await get(Uri.parse(url));
+Future<List<Spacecraft>> downloadJSON() async {
+  final jsonEndpoint =
+      "https://raw.githubusercontent.com/johnriad/pizza/refs/heads/main/pizza.json";
 
-    if (response.statusCode == 200) {
-      List jsonData = json.decode(response.body);
-      return jsonData.map((item) => Spacecraft.fromJson(item)).toList();
-    } else {
-      throw Exception('Failed to load data');
-    }
+  final response = await get(Uri.parse(jsonEndpoint));
+
+  if (response.statusCode == 200) {
+    List spacecrafts = json.decode(response.body);
+    return spacecrafts
+        .map((spacecraft) => Spacecraft.fromJson(spacecraft))
+        .toList();
+  } else {
+    throw Exception('Failed to load JSON data.');
   }
+}
 
+class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Riad Food Corner'),
+        title: Text('Fuad Food Corner'),
         centerTitle: true,
         actions: [
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              IconButton(
-                icon: Icon(Icons.shopping_cart),
-                onPressed: () {},
-              ),
-              Positioned(
-                right: 10,
-                top: 10,
-                child: CircleAvatar(
-                  radius: 8,
-                  backgroundColor: Colors.white,
-                  child: Text(
-                    '0',
-                    style: TextStyle(fontSize: 12, color: Colors.deepOrange),
-                  ),
-                ),
-              ),
-            ],
-          ),
+          IconButton(onPressed: () {}, icon: Icon(Icons.shopping_cart))
         ],
       ),
       body: FutureBuilder<List<Spacecraft>>(
-        future: fetchData(),
+        future: downloadJSON(),
         builder: (context, snapshot) {
           if (snapshot.hasData) {
             return ListView.builder(
+              padding: EdgeInsets.all(10),
               itemCount: snapshot.data!.length,
               itemBuilder: (context, index) {
                 return FoodCard(spacecraft: snapshot.data![index]);
@@ -110,18 +97,19 @@ class FoodCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      elevation: 5,
-      child: InkWell(
-        onTap: () {
-          Navigator.push(context,
-            MaterialPageRoute(
-              builder: (context) => DetailScreen(spacecraft: spacecraft),
-            ),
-          );
-        },
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => SecondScreen(spacecraft: spacecraft),
+          ),
+        );
+      },
+      child: Card(
+        margin: EdgeInsets.symmetric(vertical: 10),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        elevation: 4,
         child: Column(
           children: [
             ClipRRect(
@@ -134,18 +122,15 @@ class FoodCard extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    spacecraft.name,
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    '\$${spacecraft.propellant}',
-                    style: TextStyle(fontSize: 16, color: Colors.green[800]),
-                  ),
+                  Text(spacecraft.name,
+                      style:
+                      TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text("\$${spacecraft.propellant}",
+                      style: TextStyle(fontSize: 16, color: Colors.green[700])),
                 ],
               ),
             )
@@ -156,17 +141,31 @@ class FoodCard extends StatelessWidget {
   }
 }
 
-class DetailScreen extends StatefulWidget {
+class SecondScreen extends StatefulWidget {
   final Spacecraft spacecraft;
 
-  DetailScreen({required this.spacecraft});
+  SecondScreen({required this.spacecraft});
 
   @override
-  _DetailScreenState createState() => _DetailScreenState();
+  _SecondScreenState createState() => _SecondScreenState();
 }
 
-class _DetailScreenState extends State<DetailScreen> {
+class _SecondScreenState extends State<SecondScreen> {
   int itemCount = 0;
+
+  // Sanitize and parse the price string
+  double get itemPrice {
+    try {
+      return double.parse(widget.spacecraft.propellant.trim().replaceAll(RegExp(r'[^\d.]'), ''));
+    } catch (e) {
+      print('Failed to parse price: ${widget.spacecraft.propellant}');
+      return 0.0;
+    }
+  }
+
+  double get subtotal => itemPrice * itemCount;
+  double get vat => subtotal * 0.10;
+  double get totalPrice => subtotal + vat;
 
   void increment() {
     setState(() {
@@ -184,7 +183,7 @@ class _DetailScreenState extends State<DetailScreen> {
 
   void addToCart() {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Item added to cart!")),
+      SnackBar(content: Text("Added to cart successfully!")),
     );
   }
 
@@ -195,74 +194,92 @@ class _DetailScreenState extends State<DetailScreen> {
         title: Text(widget.spacecraft.name),
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
+        padding: EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(15),
-                child: Image.network(
-                  widget.spacecraft.imageUrl,
-                  height: 250,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                ),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(15),
+              child: Image.network(
+                widget.spacecraft.imageUrl,
+                height: 250,
+                width: double.infinity,
+                fit: BoxFit.cover,
               ),
             ),
             SizedBox(height: 20),
+            Text('FOOD DETAILS',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            SizedBox(height: 20),
             Text(
-              widget.spacecraft.name,
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              'NAME: ${widget.spacecraft.name}',
+              style: TextStyle(fontSize: 18),
             ),
             SizedBox(height: 10),
             Text(
-              'Price: \$${widget.spacecraft.propellant}',
-              style: TextStyle(fontSize: 20, color: Colors.green[700]),
+              'UNIT PRICE: \$${itemPrice.toStringAsFixed(2)}',
+              style: TextStyle(fontSize: 18, color: Colors.green[800]),
             ),
-            SizedBox(height: 20),
+            SizedBox(height: 30),
             Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                ElevatedButton(
+                IconButton(
                   onPressed: decrement,
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.deepOrangeAccent),
-                  child: Icon(Icons.remove),
+                  icon: Icon(Icons.remove_circle_outline),
+                  iconSize: 30,
+                  color: Colors.deepOrange,
                 ),
-                SizedBox(width: 20),
                 Text(
                   '$itemCount',
-                  style: TextStyle(fontSize: 20),
+                  style: TextStyle(fontSize: 24),
                 ),
-                SizedBox(width: 20),
-                ElevatedButton(
+                IconButton(
                   onPressed: increment,
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.deepOrange),
-                  child: Icon(Icons.add),
+                  icon: Icon(Icons.add_circle_outline),
+                  iconSize: 30,
+                  color: Colors.deepOrange,
                 ),
               ],
             ),
             SizedBox(height: 30),
-            Center(
-              child: ElevatedButton.icon(
-                onPressed: addToCart,
-                icon: Icon(Icons.shopping_cart_checkout),
-                label: Text(
-                  'Add to Cart',
-                  style: TextStyle(fontSize: 18),
-                ),
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(horizontal: 30, vertical: 12),
-                  backgroundColor: Colors.deepOrange,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20)),
-                ),
+            if (itemCount > 0)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Subtotal: \$${subtotal.toStringAsFixed(2)}',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  Text(
+                    'VAT (10%): \$${vat.toStringAsFixed(2)}',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  Text(
+                    'Total Price: \$${totalPrice.toStringAsFixed(2)}',
+                    style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.green[900],
+                        fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 20),
+                ],
               ),
-            ),
+            ElevatedButton.icon(
+              onPressed: itemCount > 0 ? addToCart : null,
+              icon: Icon(Icons.shopping_cart),
+              label: Text('ADD TO CART', style: TextStyle(fontSize: 18)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.deepOrange,
+                padding: EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30)),
+              ),
+            )
           ],
         ),
       ),
     );
   }
 }
+
